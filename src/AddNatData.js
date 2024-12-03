@@ -29,8 +29,8 @@ const AddNatData = ({ isDarkMode }) => {
   };
 
   const validateForm = () => {
-    if (isNaN(data.Age) || isNaN(data.IQ) || isNaN(data.NAT_Results)) {
-      toast.error("Age, IQ, and NAT Results must be numbers.");
+    if (isNaN(data.Age) || isNaN(data.Academic_perfromance) || isNaN(data.NAT_Results)) {
+      toast.error("Age, Academic Performance, and NAT Results must be numbers.");
       return false;
     }
     if (!data.Respondents || !data.Sex || !data.Ethnic || !data.Academic_perfromance) {
@@ -88,7 +88,7 @@ const AddNatData = ({ isDarkMode }) => {
         <div key={key}>
           <label className="block mb-2 text-sm">{key.replace(/_/g, " ")}</label>
           <input
-            type={key === "Age" || key === "IQ" || key === "NAT_Results" ? "number" : "text"}
+            type={key === "Age" || key === "Academic_performance" || key === "NAT_Results" ? "number" : "text"}
             name={key}
             value={data[key]}
             onChange={handleChange}

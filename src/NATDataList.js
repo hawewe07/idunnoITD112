@@ -18,8 +18,10 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
     Study_Habit: "",
     NAT_Results: "",
   });
+
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Handle Delete
   const handleDelete = async (id) => {
     const natDocRef = doc(db, "natData", id);
     try {
@@ -32,6 +34,7 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
     }
   };
 
+  // Handle Edit
   const handleEdit = (data) => {
     setEditingId(data.id);
     setEditForm({
@@ -49,17 +52,29 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
     });
   };
 
+  // Handle Update
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (isNaN(editForm.Age) || isNaN(editForm.IQ) || isNaN(editForm.NAT_Results)) {
-      toast.error("Age, IQ, and NAT Results must be numbers.");
+
+    // Parse numeric fields (Age, Academic Performance, and NAT Results)
+    const Age = parseFloat(editForm.Age);
+    const AcademicPerformance = parseFloat(editForm.Academic_perfromance);
+    const NatResults = parseFloat(editForm.NAT_Results);
+
+    // Check if Age, Academic Performance, and NAT Results are valid numbers
+    if (isNaN(Age) || isNaN(AcademicPerformance) || isNaN(NatResults)) {
+      toast.error("Age, Academic Performance, and NAT Results must be numbers.");
       return;
     }
+
+    // IQ can be a string, no need to parse it
+    const updatedData = { ...editForm, Age: Age, Academic_perfromance: AcademicPerformance, NAT_Results: NatResults };
+
     const natDocRef = doc(db, "natData", editingId);
     try {
-      await updateDoc(natDocRef, editForm);
-      const updatedData = { id: editingId, ...editForm };
-      onDataUpdated(updatedData);
+      await updateDoc(natDocRef, updatedData);
+      const updatedDataWithId = { id: editingId, ...updatedData };
+      onDataUpdated(updatedDataWithId);
       setEditingId(null);
       toast.success("Data updated successfully!");
     } catch (error) {
@@ -76,7 +91,7 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
   // Filter the data based on the search term using useMemo for optimization
   const filteredData = useMemo(() => {
     return natData.filter((data) =>
-      data.Respondents.toLowerCase().includes(searchTerm.toLowerCase())
+      data.Respondents?.toLowerCase().includes(searchTerm.toLowerCase()) // Added null check
     );
   }, [natData, searchTerm]);
 
@@ -111,7 +126,7 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
                 {key.replace(/_/g, " ")}
               </label>
               <input
-                type="text"
+                type={key === "Age" || key === "Academic_perfromance" || key === "NAT_Results" ? "number" : "text"}
                 name={key}
                 value={editForm[key]}
                 onChange={(e) =>
@@ -145,71 +160,69 @@ const NATDataList = ({ natData, onDataUpdated, onDataDeleted, isDarkMode }) => {
           </button>
         </form>
       ) : (
-        <table
-          className={`w-full mt-4 border ${
-            isDarkMode ? "border-[#6EACDA]" : "border-[#03346E]"
-          }`}
-        >
-          <thead>
-            <tr
-              className={`${
-                isDarkMode ? "bg-[#03346E]" : "bg-[#03346E]"
-              } text-[#6EACDA] border ${
-                isDarkMode ? "border-[#6EACDA]" : "border-[#03346E]"
-              }`}
-            >
-              <th className="px-4 py-2 text-center">Respondents</th>
-              <th className="px-4 py-2 text-center">Age</th>
-              <th className="px-4 py-2 text-center">Sex</th>
-              <th className="px-4 py-2 text-center">Ethnic</th>
-              <th className="px-4 py-2 text-center">Academic Performance</th>
-              <th className="px-4 py-2 text-center">Academic Description</th>
-              <th className="px-4 py-2 text-center">IQ</th>
-              <th className="px-4 py-2 text-center">Type of School</th>
-              <th className="px-4 py-2 text-center">Socio-Economic Status</th>
-              <th className="px-4 py-2 text-center">Study Habit</th>
-              <th className="px-4 py-2 text-center">NAT Results</th>
-              <th className="px-4 py-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.length === 0 ? (
-              <tr>
-                <td colSpan="12" className="text-center py-4">No data found</td>
+        <div className="overflow-x-auto">
+          <table
+            className={`w-full mt-4 border ${isDarkMode ? "border-[#6EACDA]" : "border-[#03346E]"}`}
+          >
+            <thead>
+              <tr
+                className={`${isDarkMode ? "bg-[#03346E]" : "bg-[#03346E]"} text-[#6EACDA] border ${
+                  isDarkMode ? "border-[#6EACDA]" : "border-[#03346E]"
+                }`}
+              >
+                <th className="px-4 py-2 text-center">Respondents</th>
+                <th className="px-4 py-2 text-center">Age</th>
+                <th className="px-4 py-2 text-center">Sex</th>
+                <th className="px-4 py-2 text-center">Ethnic</th>
+                <th className="px-4 py-2 text-center">Academic Performance</th>
+                <th className="px-4 py-2 text-center">Academic Description</th>
+                <th className="px-4 py-2 text-center">IQ</th>
+                <th className="px-4 py-2 text-center">Type of School</th>
+                <th className="px-4 py-2 text-center">Socio-Economic Status</th>
+                <th className="px-4 py-2 text-center">Study Habit</th>
+                <th className="px-4 py-2 text-center">NAT Results</th>
+                <th className="px-4 py-2 text-center">Actions</th>
               </tr>
-            ) : (
-              filteredData.map((data) => (
-                <tr key={data.id}>
-                  <td className="px-4 py-2 text-center">{data.Respondents}</td>
-                  <td className="px-4 py-2 text-center">{data.Age}</td>
-                  <td className="px-4 py-2 text-center">{data.Sex}</td>
-                  <td className="px-4 py-2 text-center">{data.Ethnic}</td>
-                  <td className="px-4 py-2 text-center">{data.Academic_perfromance}</td>
-                  <td className="px-4 py-2 text-center">{data.Academic_description}</td>
-                  <td className="px-4 py-2 text-center">{data.IQ}</td>
-                  <td className="px-4 py-2 text-center">{data.Type_school}</td>
-                  <td className="px-4 py-2 text-center">{data.Socio_economic_status}</td>
-                  <td className="px-4 py-2 text-center">{data.Study_Habit}</td>
-                  <td className="px-4 py-2 text-center">{data.NAT_Results}</td>
-                  <td className="px-4 py-2 flex space-x-2 justify-center">
-                    <button
-                      onClick={() => handleEdit(data)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:opacity-90"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(data.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:opacity-90"
-                    >
-                      Delete
-                    </button>
-                  </td>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan="12" className="text-center py-4">No data found</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredData.map((data) => (
+                  <tr key={data.id}>
+                    <td className="px-4 py-2 text-center">{data.Respondents}</td>
+                    <td className="px-4 py-2 text-center">{data.Age}</td>
+                    <td className="px-4 py-2 text-center">{data.Sex}</td>
+                    <td className="px-4 py-2 text-center">{data.Ethnic}</td>
+                    <td className="px-4 py-2 text-center">{data.Academic_perfromance}</td>
+                    <td className="px-4 py-2 text-center">{data.Academic_description}</td>
+                    <td className="px-4 py-2 text-center">{data.IQ}</td>
+                    <td className="px-4 py-2 text-center">{data.Type_school}</td>
+                    <td className="px-4 py-2 text-center">{data.Socio_economic_status}</td>
+                    <td className="px-4 py-2 text-center">{data.Study_Habit}</td>
+                    <td className="px-4 py-2 text-center">{data.NAT_Results}</td>
+                    <td className="px-4 py-2 flex space-x-2 justify-center">
+                      <button
+                        onClick={() => handleEdit(data)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:opacity-90"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(data.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:opacity-90"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
